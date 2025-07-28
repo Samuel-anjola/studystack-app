@@ -25,7 +25,7 @@ import {
   Upload,
 } from "lucide-react"
 import Link from "next/link"
-import { useUser } from "../../contexts/user-context"
+import { useUser } from "../../../context/user-context"
 
 export default function SettingsPage() {
   const { userData, updateUserData, isDarkMode, setDarkMode } = useUser()
@@ -192,7 +192,7 @@ export default function SettingsPage() {
               }`}
               asChild
             >
-              <Link href="/">
+              <Link href="/student/dasgboard">
                 <div className={`w-4 h-4 mr-3 rounded-sm ${isDarkMode ? "bg-gray-600" : "bg-gray-400"}`} />
                 Dashboard
               </Link>
@@ -204,7 +204,7 @@ export default function SettingsPage() {
               }`}
               asChild
             >
-              <Link href="/practice">
+              <Link href="/student/practice">
                 <BookOpen className="w-4 h-4 mr-3" />
                 Practice Room
               </Link>
@@ -216,7 +216,7 @@ export default function SettingsPage() {
               }`}
               asChild
             >
-              <Link href="/revision">
+              <Link href="/student/revision">
                 <BookOpen className="w-4 h-4 mr-3" />
                 Revision Room
               </Link>

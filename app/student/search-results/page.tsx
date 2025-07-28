@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/student/ui/card"
 import { Input } from "@/components/student/ui/input"
 import { Search, ChevronDown, BookOpen, Download, Book, Settings } from "lucide-react"
 import Link from "next/link"
-import { useUser } from "../../contexts/user-context"
+import { useUser } from "../../../context/user-context"
 
 const questionPapers = [
   {
@@ -126,7 +126,7 @@ export default function SearchResults() {
               }`}
               asChild
             >
-              <Link href="/">
+              <Link href="/student/dashboard">
                 <div className={`w-4 h-4 mr-3 rounded-sm ${isDarkMode ? "bg-gray-600" : "bg-gray-400"}`} />
                 Dashboard
               </Link>
@@ -138,7 +138,7 @@ export default function SearchResults() {
               }`}
               asChild
             >
-              <Link href="/practice">
+              <Link href="/student/practice">
                 <BookOpen className="w-4 h-4 mr-3" />
                 Practice Room
               </Link>
@@ -150,7 +150,7 @@ export default function SearchResults() {
               }`}
               asChild
             >
-              <Link href="/revision">
+              <Link href="/student/revision">
                 <BookOpen className="w-4 h-4 mr-3" />
                 Revision Room
               </Link>
@@ -162,7 +162,7 @@ export default function SearchResults() {
               }`}
               asChild
             >
-              <Link href="/settings">
+              <Link href="/student/settings">
                 <Settings className="w-4 h-4 mr-3" />
                 Settings
               </Link>

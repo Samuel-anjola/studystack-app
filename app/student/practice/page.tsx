@@ -387,7 +387,7 @@ export default function PracticeMode() {
                 }`}
                 asChild
               >
-                <Link href="/">
+                <Link href="/student/dashboard">
                   <div className={`w-4 h-4 mr-3 rounded-sm ${isDarkMode ? "bg-gray-600" : "bg-gray-400"}`} />
                   Dashboard
                 </Link>
@@ -403,7 +403,7 @@ export default function PracticeMode() {
                 }`}
                 asChild
               >
-                <Link href="/revision">
+                <Link href="/student/revision">
                   <BookOpen className="w-4 h-4 mr-3" />
                   Revision Room
                 </Link>
@@ -415,7 +415,7 @@ export default function PracticeMode() {
                 }`}
                 asChild
               >
-                <Link href="/settings">
+                <Link href="/student/settings">
                   <Settings className="w-4 h-4 mr-3" />
                   Settings
                 </Link>

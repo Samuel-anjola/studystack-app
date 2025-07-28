@@ -8,8 +8,8 @@ import { Input } from "@/components/student/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/student/ui/select"
 import { Search, ChevronDown, BookOpen, Clock, Download, Bookmark, Settings } from "lucide-react"
 import Link from "next/link"
-import { useUser } from "../../contexts/user-context"
-import { useAnalytics } from "../../contexts/analytics-context"
+import { useUser } from "../../../context/user-context"
+import { useAnalytics } from "../../../context/analytics-context"
 
 const courseNotes = [
   {
@@ -250,7 +250,7 @@ export default function RevisionRoom() {
               }`}
               asChild
             >
-              <Link href="/">
+              <Link href="/student/dashboard">
                 <div className={`w-4 h-4 mr-3 rounded-sm ${isDarkMode ? "bg-gray-600" : "bg-gray-400"}`} />
                 Dashboard
               </Link>
@@ -262,7 +262,7 @@ export default function RevisionRoom() {
               }`}
               asChild
             >
-              <Link href="/practice">
+              <Link href="/student/practice">
                 <BookOpen className="w-4 h-4 mr-3" />
                 Practice Room
               </Link>
@@ -278,7 +278,7 @@ export default function RevisionRoom() {
               }`}
               asChild
             >
-              <Link href="/settings">
+              <Link href="/student/settings">
                 <Settings className="w-4 h-4 mr-3" />
                 Settings
               </Link>
