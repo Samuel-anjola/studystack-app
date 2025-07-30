@@ -1,15 +1,27 @@
 "use client"
 
-import type React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
+import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server"
+import { useKindeAuth } from "@kinde-oss/kinde-auth-nextjs";
 import { Upload, FileText, Download, Edit, Trash2 } from "lucide-react"
 
 const existingNotes = [
@@ -45,8 +57,55 @@ export default function AdminCourseNotePage() {
     department: "",
     file: null as File | null,
   })
+
   const router = useRouter()
   const { toast } = useToast()
+
+ const { user } = useKindeAuth();
+
+useEffect(() => {
+  async function saveUserToDB() {
+    if (!user) return;
+
+    try {
+      const res = await fetch("/api/save-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: user.id,
+          email: user.email,
+          name: `${user.given_name} ${user.family_name}`,
+          role: "admin", // ✅ Use 'role' instead of 'user_type'
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error("❌ Failed to save user:", errorData);
+
+        toast({
+          title: "Save failed",
+          description: errorData.error || "Unexpected error. Try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log("✅ User saved to MongoDB");
+    } catch (err) {
+      console.error("❌ Network error saving user:", err);
+      toast({
+        title: "Network Error",
+        description: "Couldn't save user to database.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  saveUserToDB(); // ✅ You forgot to call the async function
+}, [user]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -129,9 +188,7 @@ export default function AdminCourseNotePage() {
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                 <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="CSC" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="CSC" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="csc">CSC</SelectItem>
                     <SelectItem value="mat">MAT</SelectItem>
@@ -140,9 +197,7 @@ export default function AdminCourseNotePage() {
                 </Select>
 
                 <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="300 L" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="300 L" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="100">100 L</SelectItem>
                     <SelectItem value="200">200 L</SelectItem>
@@ -152,9 +207,7 @@ export default function AdminCourseNotePage() {
                 </Select>
 
                 <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="1st Semester" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="1st Semester" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1st">1st Semester</SelectItem>
                     <SelectItem value="2nd">2nd Semester</SelectItem>
@@ -162,9 +215,7 @@ export default function AdminCourseNotePage() {
                 </Select>
 
                 <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="CSC 301" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="CSC 301" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="csc301">CSC 301</SelectItem>
                     <SelectItem value="csc302">CSC 302</SelectItem>
@@ -236,9 +287,7 @@ export default function AdminCourseNotePage() {
                 <div className="space-y-2">
                   <Label htmlFor="year">Year:</Label>
                   <Select onValueChange={(value) => setFormData((prev) => ({ ...prev, year: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="2020" />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="2023" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="2020">2020</SelectItem>
                       <SelectItem value="2021">2021</SelectItem>
@@ -252,9 +301,7 @@ export default function AdminCourseNotePage() {
                 <div className="space-y-2">
                   <Label htmlFor="level">Level:</Label>
                   <Select onValueChange={(value) => setFormData((prev) => ({ ...prev, level: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="100L" />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="100L" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="100L">100L</SelectItem>
                       <SelectItem value="200L">200L</SelectItem>
@@ -267,9 +314,7 @@ export default function AdminCourseNotePage() {
                 <div className="space-y-2">
                   <Label htmlFor="semester">Semester:</Label>
                   <Select onValueChange={(value) => setFormData((prev) => ({ ...prev, semester: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="1st Semester" />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="1st Semester" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="1st Semester">1st Semester</SelectItem>
                       <SelectItem value="2nd Semester">2nd Semester</SelectItem>
@@ -280,9 +325,7 @@ export default function AdminCourseNotePage() {
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="department">Department:</Label>
                   <Select onValueChange={(value) => setFormData((prev) => ({ ...prev, department: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="CSC" />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="CSC" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="CSC">CSC</SelectItem>
                       <SelectItem value="MAT">MAT</SelectItem>
@@ -313,9 +356,7 @@ export default function AdminCourseNotePage() {
               </div>
 
               <div className="flex justify-center gap-4 pt-4">
-                <Button variant="outline" className="px-8 bg-transparent">
-                  Cancel
-                </Button>
+                <Button variant="outline" className="px-8 bg-transparent">Cancel</Button>
                 <Button
                   onClick={handleUpload}
                   disabled={isUploading}

@@ -10,6 +10,7 @@ import { Search, ChevronDown, BookOpen, Clock, Download, Bookmark, Settings } fr
 import Link from "next/link"
 import { useUser } from "../../../context/user-context"
 import { useAnalytics } from "../../../context/analytics-context"
+import { useKindeAuth } from "@kinde-oss/kinde-auth-nextjs";
 
 const courseNotes = [
   {
@@ -71,6 +72,8 @@ export default function RevisionRoom() {
   const [hasSearched, setHasSearched] = useState(false)
   const [notes, setNotes] = useState(courseNotes)
   const [activeFilter, setActiveFilter] = useState<string | null>(null)
+   const [userState, setUserData] = useState<any>(null);
+      const { user } = useKindeAuth();
 
   // Calculate stats
   const newNotesCount = notes.filter((note) => note.isNew).length
@@ -171,12 +174,16 @@ export default function RevisionRoom() {
   }
 
   const getDisplayName = () => {
-    return `${userData.firstName} ${userData.lastName}`
-  }
+  const firstName = userState?.firstName || user?.given_name || "";
+  const lastName = userState?.lastName || user?.family_name || "";
+  return `${firstName} ${lastName}`.trim() || "Student";
+};
 
-  const getInitials = () => {
-    return `${userData.firstName.charAt(0)}${userData.lastName.charAt(0)}`
-  }
+const getInitials = () => {
+  const firstInitial = (userState?.firstName || user?.given_name || "S").charAt(0);
+  const lastInitial = (userState?.lastName || user?.family_name || "T").charAt(0);
+  return `${firstInitial}${lastInitial}`;
+};
 
   return (
     <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? "dark bg-gray-900" : "bg-gray-50"}`}>

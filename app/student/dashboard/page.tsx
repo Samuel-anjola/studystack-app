@@ -1,6 +1,6 @@
 "use client"
 
-
+import { useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts"
 import { Search, ChevronDown, Flame, BookOpen, Clock, CheckCircle, Download, Settings } from "lucide-react"
 import Link from "next/link"
@@ -10,23 +10,65 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/student/u
 import { Input } from "@/components/student/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/student/ui/select"
 // Update the import path if the file exists elsewhere, for example:
+import { useState } from "react";
 import { useUser } from "../../../context/user-context"
 import { useAnalytics } from "../../../context/analytics-context"
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { useRouter } from "next/navigation";
+import { useKindeAuth } from "@kinde-oss/kinde-auth-nextjs";
 
 export default function Component() {
   const { userData, isDarkMode } = useUser()
   const { analytics, getWeeklyTimeData, getTodayTimeSpent, getStreakData, recordDownload } = useAnalytics()
   const router = useRouter();
+  const [userState, setUserData] = useState<any>(null);
+  const { user } = useKindeAuth();
 
-  const getDisplayName = () => {
-    return `${userData.firstName} ${userData.lastName}`
+    // 👇 Save authenticated student to DB
+
+  useEffect(() => {
+    const saveUserToDB = async () => {
+      try {
+        await fetch("/api/save-user", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status: "Student logged in" }),
+        });
+      } catch (err) {
+        console.error("Error saving user:", err);
+      }
+    };
+
+    saveUserToDB();
+     async function fetchUserData() {
+    const res = await fetch("/api/get-user");
+    const data = await res.json();
+    setUserData(data);
   }
 
-  const getInitials = () => {
-    return `${userData.firstName.charAt(0)}${userData.lastName.charAt(0)}`
+  if (user) {
+    fetchUserData();
   }
+  }, []);
+  
+
+
+ 
+
+const getDisplayName = () => {
+  const firstName = userState?.firstName || user?.given_name || "";
+  const lastName = userState?.lastName || user?.family_name || "";
+  return `${firstName} ${lastName}`.trim() || "Student";
+};
+
+const getInitials = () => {
+  const firstInitial = (userState?.firstName || user?.given_name || "S").charAt(0);
+  const lastInitial = (userState?.lastName || user?.family_name || "T").charAt(0);
+  return `${firstInitial}${lastInitial}`;
+};
+
 
   // Get real-time data
   const weeklyTimeData = getWeeklyTimeData()
@@ -491,7 +533,7 @@ export default function Component() {
 
             {/* Logout Button */}
             <div className="mt-8 flex justify-end">
-              <LogoutLink postLogoutRedirectURL="/login/student">
+              <LogoutLink postLogoutRedirectURL="http://localhost:3000">
                 <button
                   className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow"
                   onClick={handleLogout}

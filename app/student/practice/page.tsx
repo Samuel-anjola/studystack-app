@@ -11,11 +11,15 @@ import { Search, ChevronDown, BookOpen, Clock, CheckCircle2, X, ArrowLeft, Arrow
 import Link from "next/link"
 import { useUser } from "../../../context/user-context"
 import { useAnalytics } from "../../../context/analytics-context"
+import { useKindeAuth } from "@kinde-oss/kinde-auth-nextjs";
 
 
 export default function PracticeMode() {
   const { userData, isDarkMode } = useUser()
   const { startSession, endSession, updateSessionProgress } = useAnalytics()
+  const [userState, setUserData] = useState<any>(null);
+    const { user } = useKindeAuth();
+  
 
   const [currentView, setCurrentView] = useState<"landing" | "test" | "result">("landing")
   const [currentQuestion, setCurrentQuestion] = useState(0)
@@ -227,8 +231,18 @@ export default function PracticeMode() {
 
       return () => clearInterval(timer)
     }
-  }, [currentView])
+  }, [currentView]) 
+const getDisplayName = () => {
+  const firstName = userState?.firstName || user?.given_name || "";
+  const lastName = userState?.lastName || user?.family_name || "";
+  return `${firstName} ${lastName}`.trim() || "Student";
+};
 
+const getInitials = () => {
+  const firstInitial = (userState?.firstName || user?.given_name || "S").charAt(0);
+  const lastInitial = (userState?.lastName || user?.family_name || "T").charAt(0);
+  return `${firstInitial}${lastInitial}`;
+};
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
@@ -303,14 +317,6 @@ export default function PracticeMode() {
     setAnswers(new Array(sampleQuestions.length).fill(null))
     setTimeLeft(600)
     setCurrentSessionId(null)
-  }
-
-  const getDisplayName = () => {
-    return `${userData.firstName} ${userData.lastName}`
-  }
-
-  const getInitials = () => {
-    return `${userData.firstName.charAt(0)}${userData.lastName.charAt(0)}`
   }
 
   // Landing Page View
@@ -955,7 +961,7 @@ export default function PracticeMode() {
                         Practice Again
                       </Button>
                       <Button asChild className="bg-purple-600 hover:bg-purple-700 text-white">
-                        <Link href="/">Back to Dashboard</Link>
+                        <Link href="/student/dashboard">Back to Dashboard</Link>
                       </Button>
                     </div>
                   </CardContent>

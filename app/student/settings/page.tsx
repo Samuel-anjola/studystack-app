@@ -26,6 +26,8 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useUser } from "../../../context/user-context"
+import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
+import { useKindeAuth } from "@kinde-oss/kinde-auth-nextjs";
 
 export default function SettingsPage() {
   const { userData, updateUserData, isDarkMode, setDarkMode } = useUser()
@@ -34,6 +36,8 @@ export default function SettingsPage() {
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+    const [userState, setUserData] = useState<any>(null);
+      const { user } = useKindeAuth();
 
   const [localSettings, setLocalSettings] = useState({
     // Password Settings
@@ -112,13 +116,17 @@ export default function SettingsPage() {
     setDarkMode(checked)
   }
 
-  const getDisplayName = () => {
-    return `${userData.firstName} ${userData.lastName}`
-  }
+ const getDisplayName = () => {
+  const firstName = userState?.firstName || user?.given_name || "";
+  const lastName = userState?.lastName || user?.family_name || "";
+  return `${firstName} ${lastName}`.trim() || "Student";
+};
 
-  const getInitials = () => {
-    return `${userData.firstName.charAt(0)}${userData.lastName.charAt(0)}`
-  }
+const getInitials = () => {
+  const firstInitial = (userState?.firstName || user?.given_name || "S").charAt(0);
+  const lastInitial = (userState?.lastName || user?.family_name || "T").charAt(0);
+  return `${firstInitial}${lastInitial}`;
+};
 
   return (
     <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? "dark bg-gray-900" : "bg-gray-50"}`}>
@@ -192,7 +200,7 @@ export default function SettingsPage() {
               }`}
               asChild
             >
-              <Link href="/student/dasgboard">
+              <Link href="/student/dashboard">
                 <div className={`w-4 h-4 mr-3 rounded-sm ${isDarkMode ? "bg-gray-600" : "bg-gray-400"}`} />
                 Dashboard
               </Link>
@@ -322,68 +330,68 @@ export default function SettingsPage() {
                   </div>
 
                   <Separator className={isDarkMode ? "bg-gray-700" : ""} />
+{/* Name Fields (Read-only) */}
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div>
+    <Label
+      htmlFor="firstName"
+      className={`transition-colors duration-200 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}
+    >
+      First Name
+    </Label>
+    <Input
+      id="firstName"
+      value={userData.firstName}
+      disabled
+      className={`cursor-not-allowed transition-colors duration-200 ${
+        isDarkMode ? "bg-gray-700 border-gray-600 text-gray-400" : "bg-gray-50"
+      }`}
+    />
+  </div>
+  <div>
+    <Label
+      htmlFor="lastName"
+      className={`transition-colors duration-200 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}
+    >
+      Last Name
+    </Label>
+    <Input
+      id="lastName"
+      value={userData.lastName}
+      disabled
+      className={`cursor-not-allowed transition-colors duration-200 ${
+        isDarkMode ? "bg-gray-700 border-gray-600 text-gray-400" : "bg-gray-50"
+      }`}
+    />
+  </div>
+</div>
 
-                  {/* Name Fields */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label
-                        htmlFor="firstName"
-                        className={`transition-colors duration-200 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}
-                      >
-                        First Name
-                      </Label>
-                      <Input
-                        id="firstName"
-                        value={userData.firstName}
-                        onChange={(e) => handleUserDataChange("firstName", e.target.value)}
-                        className={`transition-colors duration-200 ${
-                          isDarkMode ? "bg-gray-700 border-gray-600 text-white" : ""
-                        }`}
-                      />
-                    </div>
-                    <div>
-                      <Label
-                        htmlFor="lastName"
-                        className={`transition-colors duration-200 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}
-                      >
-                        Last Name
-                      </Label>
-                      <Input
-                        id="lastName"
-                        value={userData.lastName}
-                        onChange={(e) => handleUserDataChange("lastName", e.target.value)}
-                        className={`transition-colors duration-200 ${
-                          isDarkMode ? "bg-gray-700 border-gray-600 text-white" : ""
-                        }`}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Email (Read-only) */}
-                  <div>
-                    <Label
-                      htmlFor="email"
-                      className={`transition-colors duration-200 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}
-                    >
-                      Email Address
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={userData.email}
-                      disabled
-                      className={`cursor-not-allowed transition-colors duration-200 ${
-                        isDarkMode ? "bg-gray-700 border-gray-600 text-gray-400" : "bg-gray-50"
-                      }`}
-                    />
-                    <p
-                      className={`text-xs mt-1 transition-colors duration-200 ${
-                        isDarkMode ? "text-gray-500" : "text-gray-500"
-                      }`}
-                    >
-                      Email address cannot be changed
-                    </p>
-                  </div>
+{/* Email (Read-only) */}
+<div>
+  <Label
+    htmlFor="email"
+    className={`transition-colors duration-200 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}
+  >
+    Email Address
+  </Label>
+  <Input
+    id="email"
+    type="email"
+    value={userData.email}
+    disabled
+    className={`cursor-not-allowed transition-colors duration-200 ${
+      isDarkMode ? "bg-gray-700 border-gray-600 text-gray-400" : "bg-gray-50"
+    }`}
+  />
+  <p
+    className={`text-xs mt-1 transition-colors duration-200 ${
+      isDarkMode ? "text-gray-500" : "text-gray-500"
+    }`}
+  >
+    Email address cannot be changed
+  </p>
+</div>
+                  
                 </CardContent>
               </Card>
 
@@ -647,6 +655,16 @@ export default function SettingsPage() {
                   Save Changes
                 </Button>
               </div>
+              {/* Logout Button */}
+                          <div className="mt-8 flex justify-end">
+                            <LogoutLink postLogoutRedirectURL="http://localhost:3000">
+                              <button
+                                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow"
+                              >
+                                Log Out
+                              </button>
+                            </LogoutLink>
+                          </div>
             </div>
           </div>
         </main>

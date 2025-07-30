@@ -1,49 +1,74 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useToast } from "@/hooks/use-toast"
-import { BookOpen, Shield } from "lucide-react"
-import { useAuth } from "@/context/auth-context"
+import type React from "react";
+import { useState } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { BookOpen, Shield, Mail, User } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
 
 export default function AdminSignupPage() {
-  const [adminCode, setAdminCode] = useState("")
-  const { login, isLoading } = useAuth()
-  const { toast } = useToast()
+  const [adminCode, setAdminCode] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const { login, isLoading } = useAuth();
+  const { toast } = useToast();
 
   const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    if (!adminCode.trim()) {
+    if (!adminCode.trim() || !name.trim() || !email.trim()) {
       toast({
         title: "Error",
-        description: "Please enter the admin verification code",
+        description: "All fields are required.",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    // Simple admin code verification (in production, this should be more secure)
     if (adminCode !== "ADMIN2024") {
       toast({
         title: "Error",
         description: "Invalid admin verification code",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    // Initiate Kinde login with admin role (signup flow)
-    login("admin")
-  }
+    try {
+    console.log("📤 Sending user to /api/save-user");
+      await fetch("/api/save-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          role: "admin",
+        }),
+      });
+      
+
+      localStorage.setItem("userRole", "admin");
+login("admin");
+ // Redirects with Kinde auth
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Something went wrong while saving user.",
+        variant: "destructive",
+      });
+      console.error(error);
+    }
+  };
 
   return (
     <div className="flex min-h-screen">
-      {/* Left side - Purple gradient with illustration */}
+      {/* Left Section (same as before) */}
       <div className="hidden md:flex md:w-1/2 bg-gradient-to-b from-purple-600 to-purple-800 flex-col items-center justify-center text-white p-10 relative overflow-hidden">
         <div className="relative z-10 text-center">
           <h1 className="text-4xl font-bold mb-4">Welcome Back!</h1>
@@ -56,14 +81,9 @@ export default function AdminSignupPage() {
             <Link href="/login/admin">Sign In</Link>
           </Button>
         </div>
-
-        {/* Decorative elements */}
-        <div className="absolute top-1/4 left-1/4 w-20 h-20 rounded-full bg-purple-400 opacity-20"></div>
-        <div className="absolute bottom-1/3 right-1/4 w-32 h-32 rounded-full bg-purple-300 opacity-20"></div>
-        <div className="absolute bottom-1/4 left-1/3 w-16 h-16 rounded-full bg-purple-200 opacity-20"></div>
       </div>
 
-      {/* Right side - Signup form */}
+      {/* Right Section: Form */}
       <div className="w-full md:w-1/2 flex flex-col items-center justify-center p-8">
         <div className="w-full max-w-md">
           <div className="flex items-center justify-center mb-8">
@@ -81,6 +101,43 @@ export default function AdminSignupPage() {
           <h2 className="text-3xl font-bold text-center text-purple-600 mb-6">Create Admin Account</h2>
 
           <form onSubmit={handleSignup} className="space-y-4">
+            {/* Name */}
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name</Label>
+              <div className="relative">
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="John Doe"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="pl-10"
+                />
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400" />
+                </div>
+              </div>
+            </div>
+
+            {/* Email */}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <div className="relative">
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10"
+                />
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-400" />
+                </div>
+              </div>
+            </div>
+
+            {/* Admin Code */}
             <div className="space-y-2">
               <Label htmlFor="adminCode">Admin Verification Code</Label>
               <div className="relative">
@@ -97,9 +154,6 @@ export default function AdminSignupPage() {
                   <Shield className="h-5 w-5 text-gray-400" />
                 </div>
               </div>
-              <p className="text-sm text-gray-500">
-                Enter your admin code, then you'll be redirected to complete registration with Kinde
-              </p>
             </div>
 
             <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 mt-6" disabled={isLoading}>
@@ -107,25 +161,14 @@ export default function AdminSignupPage() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Already have an account?{" "}
-              <Link href="/login/admin" className="text-purple-600 hover:underline">
-                Sign in
-              </Link>
-            </p>
-          </div>
-
-          <div className="mt-4 text-center">
-            <p className="text-xs text-gray-500">
-              Demo Admin Code: <span className="font-mono bg-gray-100 px-2 py-1 rounded">ADMIN2024</span>
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Secured by <span className="font-semibold text-purple-600">Kinde Authentication</span>
-            </p>
+          <div className="mt-6 text-center text-sm text-gray-600">
+            Already have an account?{" "}
+            <Link href="/login/admin" className="text-purple-600 hover:underline">
+              Sign in
+            </Link>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
