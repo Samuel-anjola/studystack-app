@@ -39,23 +39,9 @@ export default function AdminSignupPage() {
     }
 
     try {
-    console.log("📤 Sending user to /api/save-user");
-      await fetch("/api/save-user", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          role: "admin",
-        }),
-      });
-      
-
       localStorage.setItem("userRole", "admin");
-login("admin");
- // Redirects with Kinde auth
+      login("admin");
+      // Redirects with Kinde auth
     } catch (error) {
       toast({
         title: "Error",
@@ -98,7 +84,9 @@ login("admin");
             </div>
           </div>
 
-          <h2 className="text-3xl font-bold text-center text-purple-600 mb-6">Create Admin Account</h2>
+          <h2 className="text-3xl font-bold text-center text-purple-600 mb-6">
+            Create Admin Account
+          </h2>
 
           <form onSubmit={handleSignup} className="space-y-4">
             {/* Name */}
@@ -156,14 +144,21 @@ login("admin");
               </div>
             </div>
 
-            <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 mt-6" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="w-full bg-purple-600 hover:bg-purple-700 mt-6"
+              disabled={isLoading}
+            >
               {isLoading ? "Creating account..." : "Continue with Kinde Auth"}
             </Button>
           </form>
 
           <div className="mt-6 text-center text-sm text-gray-600">
             Already have an account?{" "}
-            <Link href="/login/admin" className="text-purple-600 hover:underline">
+            <Link
+              href="/login/admin"
+              className="text-purple-600 hover:underline"
+            >
               Sign in
             </Link>
           </div>

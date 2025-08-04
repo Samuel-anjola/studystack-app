@@ -76,10 +76,7 @@ export default function AdminCourseNotePage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            id: user.id,
-            email: user.email,
-            name: `${user.given_name} ${user.family_name}`,
-            role: "admin", // ✅ Use 'role' instead of 'user_type'
+            role: localStorage.getItem("userRole"),
           }),
         });
 

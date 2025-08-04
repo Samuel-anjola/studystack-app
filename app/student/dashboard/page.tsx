@@ -34,7 +34,7 @@ export default function Component() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ status: "Student logged in" }),
+          body: JSON.stringify({ matric_number: localStorage.getItem("matricNumber"), role: localStorage.getItem("userRole") }),
         });
       } catch (err) {
         console.error("Error saving user:", err);
@@ -42,15 +42,7 @@ export default function Component() {
     };
 
     saveUserToDB();
-     async function fetchUserData() {
-    const res = await fetch("/api/get-user");
-    const data = await res.json();
-    setUserData(data);
-  }
 
-  if (user) {
-    fetchUserData();
-  }
   }, []);
   
 
