@@ -53,6 +53,7 @@ export default function AdminUsersPage() {
   const { toast } = useToast();
 
   useEffect(() => {
+    // this will be called everytime the search term changes
     const filtered = users.filter(
       (user) =>
         user.given_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -66,6 +67,7 @@ export default function AdminUsersPage() {
   }, [searchTerm, users]);
 
   useEffect(() => {
+    // this is to fetch users immediately this page loads
     const fetchAndSetUsers = async () => {
       const fetchedUsers = await fetchUsers();
       setUsers(fetchedUsers);
@@ -140,7 +142,6 @@ export default function AdminUsersPage() {
                     className="pl-10"
                   />
                 </div>
-                
               </div>
             </CardContent>
           </Card>
