@@ -645,13 +645,13 @@ export default function Component() {
                       >
                         {departments.map((department) => (
                           <SelectItem
-                            key={department}
-                            value={department}
+                            key={department.value}
+                            value={department.value}
                             className={
                               isDarkMode ? "text-white hover:bg-gray-600" : ""
                             }
                           >
-                            {department}
+                            {department.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -818,7 +818,7 @@ export default function Component() {
                                 isDarkMode ? "text-gray-400" : "text-gray-600"
                               }`}
                             >
-                              {paper.department}
+                              { departments.find(dep => dep.value == paper.department)?.name || paper.department }
                             </p>
                             <p
                               className={`text-sm mb-4 transition-colors duration-200 ${

@@ -305,8 +305,8 @@ export default function AdminCourseNotePage() {
                   </SelectTrigger>
                   <SelectContent>
                     {departments.map((department) => (
-                      <SelectItem key={department} value={department}>
-                        {department}
+                      <SelectItem key={department.value} value={department.value}>
+                        {department.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -520,8 +520,8 @@ export default function AdminCourseNotePage() {
                     </SelectTrigger>
                     <SelectContent>
                       {departments.map((dept) => (
-                        <SelectItem key={dept} value={dept}>
-                          {dept}
+                        <SelectItem key={dept.value} value={dept.value}>
+                          {dept.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

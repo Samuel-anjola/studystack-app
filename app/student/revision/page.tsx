@@ -120,7 +120,6 @@ export default function RevisionRoom() {
   >([]);
 
   const handleSearch = async () => {
-    setHasSearched(true);
     setActiveFilter(null);
     await processSearch();
     // Start a revision session when searching
@@ -175,6 +174,7 @@ export default function RevisionRoom() {
         description: "Error fetching existing notes.",
       });
     } finally {
+      setHasSearched(true);
       setSearching(false);
     }
   };
@@ -514,11 +514,11 @@ export default function RevisionRoom() {
                     <SelectContent className="bg-white border-gray-200">
                       {departments.map((department) => (
                         <SelectItem
-                          key={department}
-                          value={department}
+                          key={department.value}
+                          value={department.value}
                           className="text-gray-900 hover:bg-gray-100"
                         >
-                          {department}
+                          {department.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -678,14 +678,14 @@ export default function RevisionRoom() {
                             isDarkMode ? "text-gray-400" : "text-gray-600"
                           }`}
                         >
-                          {note.department}
+                          { departments.find(dep => dep.value == note.department)?.name || note.department }
                         </p>
                         <p
                           className={`text-sm mb-3 transition-colors duration-200 ${
                             isDarkMode ? "text-gray-500" : "text-gray-500"
                           }`}
                         >
-                          {note.level} • {note.semester} • {note.year}
+                          {note.level} • {note.semester} Semester • {note.year}
                         </p>
 
                         <div className="flex items-center gap-2 mb-4">
