@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,9 +14,10 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { useKindeAuth } from "@kinde-oss/kinde-auth-nextjs";
 import { Upload, FileText, Download, Edit, Trash2 } from "lucide-react";
+import { departments, levels, semester, years } from "@/lib/common";
+
 
 const existingNotes = [
   {
@@ -44,6 +44,7 @@ const existingNotes = [
 
 export default function AdminCourseNotePage() {
   const [isUploading, setIsUploading] = useState(false);
+  const [isSearching, setSearching] = useState(false);
   const [formData, setFormData] = useState({
     courseTitle: "",
     level: "100L",
@@ -52,15 +53,25 @@ export default function AdminCourseNotePage() {
     department: "CSC",
     file: null as File | null,
   });
-  const departments = ["CSC", "MAT", "PHY"];
-  const years = ["2020", "2021", "2022", "2023", "2024"];
-  const semester = [
-    { name: "1st Semester", value: "1st" },
-    { name: "2nd Semester", value: "2nd" },
-  ];
-  const levels = ["100L", "200L", "300L", "400L"];
+  const [searchData, setSearchData] = useState({
+    level: "",
+    year: "",
+    semester: "",
+    department: "",
+  });
+  const [searchedNotes, setSearchedNotes] = useState<
+    {
+      _id: string;
+      courseTitle: string;
+      level: string;
+      semester: string;
+      year: string;
+      fileUrl: string;
+      uploadedByName?: string;
+      downloads?: number;
+    }[]
+  >([]);
 
-  const router = useRouter();
   const { toast } = useToast();
 
   const { user } = useKindeAuth();
@@ -133,7 +144,7 @@ export default function AdminCourseNotePage() {
 
     setIsUploading(true);
 
-    try{
+    try {
       const fd = new FormData();
       fd.append("courseTitle", formData.courseTitle);
       fd.append("level", formData.level);
@@ -142,9 +153,9 @@ export default function AdminCourseNotePage() {
       fd.append("department", formData.department);
       fd.append("file", formData.file);
 
-      const response = await fetch("/api/upload-note", {
+      const response = await fetch("/api/course-notes", {
         method: "POST",
-        body: fd,          
+        body: fd,
       });
       if (!response.ok) {
         const errorData = await response.json();
@@ -169,28 +180,93 @@ export default function AdminCourseNotePage() {
         department: "CSC",
         file: null,
       });
-
     } finally {
       setIsUploading(false);
     }
- 
   };
 
-  const handleSearch = () => {
-    toast({
-      title: "Search",
-      description: "Search functionality would be implemented here",
-    });
+  const handleSearch = async () => {
+    setSearching(true);
+    try {
+      let url = "/api/course-notes";
+      const searchParams = new URLSearchParams();
+      if (searchData.level) {
+        searchParams.append("level", searchData.level);
+      }
+      if (searchData.year) {
+        searchParams.append("year", searchData.year);
+      }
+      if (searchData.semester) {
+        searchParams.append("semester", searchData.semester);
+      }
+      if (searchData.department) {
+        searchParams.append("department", searchData.department);
+      }
+      const response = await fetch(`${url}?${searchParams.toString()}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        toast({
+          variant: "destructive",
+          title: "Search",
+          description: "Failed to fetch existing notes.",
+        });
+      }
+
+      const data = await response.json();
+      setSearchedNotes(data);
+      if (data.length === 0) {
+        toast({
+          variant: "destructive",
+          title: "Search",
+          description: "No course notes found for the selected criteria.",
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Search",
+        description: "Error fetching existing notes.",
+      });
+    } finally {
+      setSearching(false);
+    }
   };
 
-  const handleDelete = (id: number) => {
-    toast({
-      title: "Success",
-      description: "Course note deleted successfully",
-    });
+  const handleDelete = async (id: string) => {
+    try{
+      fetch(`/api/course-notes?noteId=${id}`, {
+        method: "DELETE",
+      }).then(async (res) => {
+        if (!res.ok) {
+          toast({
+            title: "Error",
+            description: "Failed to delete course note",
+            variant: "destructive"
+          });
+          return;
+        }
+        await handleSearch();
+        toast({
+          title: "Success",
+          description: "Course note deleted successfully",
+        });
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete course note",
+        variant: "destructive"
+      });
+    }
+    
   };
 
-  const handleEdit = (id: number) => {
+  const handleEdit = (id: string) => {
     toast({
       title: "Info",
       description: "Edit functionality would be implemented here",
@@ -212,10 +288,20 @@ export default function AdminCourseNotePage() {
           {/* Search Section */}
           <Card>
             <CardContent className="p-6">
+            <h3
+                    className={`text-xl font-semibold mb-4 transition-colors duration-200`}
+                  >
+                    Search{" "}
+                    <span className="text-purple-600">Course Note</span>
+                  </h3>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                <Select>
+                <Select
+                  onValueChange={(value) =>
+                    setSearchData((prev) => ({ ...prev, department: value }))
+                  }
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="CSC" />
+                    <SelectValue placeholder="Select Department" />
                   </SelectTrigger>
                   <SelectContent>
                     {departments.map((department) => (
@@ -226,22 +312,30 @@ export default function AdminCourseNotePage() {
                   </SelectContent>
                 </Select>
 
-                <Select>
+                <Select
+                  onValueChange={(value) =>
+                    setSearchData((prev) => ({ ...prev, level: value }))
+                  }
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="300 L" />
+                    <SelectValue placeholder="Select Level" />
                   </SelectTrigger>
                   <SelectContent>
                     {levels.map((level) => (
-                      <SelectItem key={level} value={level.toLowerCase()}>
+                      <SelectItem key={level} value={level}>
                         {level}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
 
-                <Select>
+                <Select
+                  onValueChange={(value) =>
+                    setSearchData((prev) => ({ ...prev, semester: value }))
+                  }
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="1st Semester" />
+                    <SelectValue placeholder="Select Semester" />
                   </SelectTrigger>
                   <SelectContent>
                     {semester.map((sem) => (
@@ -252,14 +346,20 @@ export default function AdminCourseNotePage() {
                   </SelectContent>
                 </Select>
 
-                <Select>
+                <Select
+                  onValueChange={(value) =>
+                    setSearchData((prev) => ({ ...prev, year: value }))
+                  }
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="CSC 301" />
+                    <SelectValue placeholder="Select Year" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="csc301">CSC 301</SelectItem>
-                    <SelectItem value="csc302">CSC 302</SelectItem>
-                    <SelectItem value="csc303">CSC 303</SelectItem>
+                    {years.map((year) => (
+                      <SelectItem key={year} value={year}>
+                        {year}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -267,66 +367,62 @@ export default function AdminCourseNotePage() {
               <div className="flex justify-center">
                 <Button
                   onClick={handleSearch}
+                  disabled={isSearching}
                   className="bg-purple-600 hover:bg-purple-700 px-8"
                 >
-                  SEARCH
+                  {isSearching? "Searching..." : "SEARCH"}
                 </Button>
               </div>
             </CardContent>
           </Card>
 
           {/* Existing Notes Management */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-purple-600">
-                Existing Course Notes
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {existingNotes.map((note) => (
-                  <div
-                    key={note.id}
-                    className="flex items-center justify-between p-4 border rounded-lg"
-                  >
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{note.title}</h3>
-                      <p className="text-sm text-gray-600">
-                        {note.courseCode} • {note.level} • {note.semester} •{" "}
-                        {note.year}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Uploaded by: {note.uploadedBy} • Downloads:{" "}
-                        {note.downloads}
-                      </p>
+          {searchedNotes.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-purple-600">
+                  Search Results: Course Notes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {searchedNotes.map((note) => (
+                    <div
+                      key={note._id}
+                      className="flex items-center justify-between p-4 border rounded-lg"
+                    >
+                      <div className="flex-1">
+                        <h3 className="font-semibold">{note.courseTitle}</h3>
+                        <p className="text-sm text-gray-600">
+                          {note.level} • {note.semester} Semester • {note.year}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Uploaded by: {note.uploadedByName || "Admin"} •
+                          Downloads: {note.downloads || 0}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDelete(note._id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="bg-purple-600 hover:bg-purple-700"
+                          onClick={() => window.open(note.fileUrl, "_blank")}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEdit(note.id)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDelete(note.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        className="bg-purple-600 hover:bg-purple-700"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Upload Section */}
           <Card>
@@ -383,11 +479,11 @@ export default function AdminCourseNotePage() {
                       <SelectValue placeholder={formData.level} />
                     </SelectTrigger>
                     <SelectContent>
-                    {levels.map((level) => (
-                      <SelectItem key={level} value={level}>
-                        {level}
-                      </SelectItem>
-                    ))}
+                      {levels.map((level) => (
+                        <SelectItem key={level} value={level}>
+                          {level}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -423,11 +519,11 @@ export default function AdminCourseNotePage() {
                       <SelectValue placeholder={formData.department} />
                     </SelectTrigger>
                     <SelectContent>
-                     {departments.map((dept) => (
-                      <SelectItem key={dept} value={dept}>
-                        {dept}
-                      </SelectItem>
-                    ))}
+                      {departments.map((dept) => (
+                        <SelectItem key={dept} value={dept}>
+                          {dept}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

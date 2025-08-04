@@ -1,30 +1,85 @@
-"use client"
+"use client";
 
 import { useEffect } from "react";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts"
-import { Search, ChevronDown, Flame, BookOpen, Clock, CheckCircle, Download, Settings } from "lucide-react"
-import Link from "next/link"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/student/ui/avatar"
-import { Button } from "@/components/student/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/student/ui/card"
-import { Input } from "@/components/student/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/student/ui/select"
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
+import {
+  Search,
+  ChevronDown,
+  Flame,
+  BookOpen,
+  Clock,
+  CheckCircle,
+  Download,
+  Settings,
+  Book,
+} from "lucide-react";
+import Link from "next/link";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/student/ui/avatar";
+import { Button } from "@/components/student/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/student/ui/card";
+import { Input } from "@/components/student/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/student/ui/select";
 // Update the import path if the file exists elsewhere, for example:
 import { useState } from "react";
-import { useUser } from "../../../context/user-context"
-import { useAnalytics } from "../../../context/analytics-context"
+import { useUser } from "../../../context/user-context";
+import { useAnalytics } from "../../../context/analytics-context";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { useRouter } from "next/navigation";
 import { useKindeAuth } from "@kinde-oss/kinde-auth-nextjs";
+import { departments, levels, semester, years } from "@/lib/common";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Component() {
-  const { userData, isDarkMode } = useUser()
-  const { analytics, getWeeklyTimeData, getTodayTimeSpent, getStreakData, recordDownload } = useAnalytics()
+  const { toast } = useToast();
+  const { userData, isDarkMode } = useUser();
+  const {
+    analytics,
+    getWeeklyTimeData,
+    getTodayTimeSpent,
+    getStreakData,
+    recordDownload,
+  } = useAnalytics();
   const router = useRouter();
   const [userState, setUserData] = useState<any>(null);
   const { user } = useKindeAuth();
 
-    // 👇 Save authenticated student to DB
+  // search fields
+  const [searchData, setSearchData] = useState({
+    level: "",
+    year: "",
+    semester: "",
+    department: "",
+  });
+  const [isSearching, setSearching] = useState(false);
+  const [searchedNotes, setSearchedNotes] = useState<
+    {
+      _id: string;
+      courseTitle: string;
+      level: string;
+      semester: string;
+      year: string;
+      fileUrl: string;
+      uploadedByName?: string;
+      downloads?: number;
+      department: string;
+    }[]
+  >([]);
+  // 👇 Save authenticated student to DB
 
   useEffect(() => {
     const saveUserToDB = async () => {
@@ -34,7 +89,10 @@ export default function Component() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ matric_number: localStorage.getItem("matricNumber"), role: localStorage.getItem("userRole") }),
+          body: JSON.stringify({
+            matric_number: localStorage.getItem("matricNumber"),
+            role: localStorage.getItem("userRole"),
+          }),
         });
       } catch (err) {
         console.error("Error saving user:", err);
@@ -42,59 +100,110 @@ export default function Component() {
     };
 
     saveUserToDB();
-
   }, []);
-  
 
+  const getDisplayName = () => {
+    const firstName = userState?.firstName || user?.given_name || "";
+    const lastName = userState?.lastName || user?.family_name || "";
+    return `${firstName} ${lastName}`.trim() || "Student";
+  };
 
- 
-
-const getDisplayName = () => {
-  const firstName = userState?.firstName || user?.given_name || "";
-  const lastName = userState?.lastName || user?.family_name || "";
-  return `${firstName} ${lastName}`.trim() || "Student";
-};
-
-const getInitials = () => {
-  const firstInitial = (userState?.firstName || user?.given_name || "S").charAt(0);
-  const lastInitial = (userState?.lastName || user?.family_name || "T").charAt(0);
-  return `${firstInitial}${lastInitial}`;
-};
-
+  const getInitials = () => {
+    const firstInitial = (
+      userState?.firstName ||
+      user?.given_name ||
+      "S"
+    ).charAt(0);
+    const lastInitial = (
+      userState?.lastName ||
+      user?.family_name ||
+      "T"
+    ).charAt(0);
+    return `${firstInitial}${lastInitial}`;
+  };
 
   // Get real-time data
-  const weeklyTimeData = getWeeklyTimeData()
-  const todayTimeSpent = getTodayTimeSpent()
-  const streakData = getStreakData()
+  const weeklyTimeData = getWeeklyTimeData();
+  const todayTimeSpent = getTodayTimeSpent();
+  const streakData = getStreakData();
 
   // Convert minutes to hours for display
   const formatTimeSpent = (minutes: number): string => {
     if (minutes < 60) {
-      return `${minutes}m`
+      return `${minutes}m`;
     }
-    const hours = Math.floor(minutes / 60)
-    const remainingMinutes = minutes % 60
-    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`
-  }
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return remainingMinutes > 0
+      ? `${hours}h ${remainingMinutes}m`
+      : `${hours}h`;
+  };
 
   // Chart data with real values
   const chartData = weeklyTimeData.map((item) => ({
     name: item.date,
     value: item.minutes,
-  }))
+  }));
 
   // Calculate statistics
-  const totalDownloads = analytics.downloadedCourses.length
-  const averageTimeSpentFormatted = formatTimeSpent(analytics.averageTimeSpent)
+  const totalDownloads = analytics.downloadedCourses.length;
+  const averageTimeSpentFormatted = formatTimeSpent(analytics.averageTimeSpent);
   const completedPracticesCount = analytics.completedPractices.filter(
-    (p) => p.completed && p.type === "practice",
-  ).length
+    (p) => p.completed && p.type === "practice"
+  ).length;
 
-  // Handle search button click (simulate download)
-  const handleSearch = () => {
-    // Simulate downloading a course when searching
-    recordDownload("CSC301", "Object Oriented Programming", "question")
-  }
+  // Handle search button click
+  const handleSearch = async () => {
+    setSearching(true);
+    try {
+      let url = "/api/course-notes";
+      const searchParams = new URLSearchParams();
+      if (searchData.level) {
+        searchParams.append("level", searchData.level);
+      }
+      if (searchData.year) {
+        searchParams.append("year", searchData.year);
+      }
+      if (searchData.semester) {
+        searchParams.append("semester", searchData.semester);
+      }
+      if (searchData.department) {
+        searchParams.append("department", searchData.department);
+      }
+      const response = await fetch(`${url}?${searchParams.toString()}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        toast({
+          variant: "destructive",
+          title: "Search",
+          description: "Failed to fetch existing notes.",
+        });
+      }
+
+      const data = await response.json();
+      setSearchedNotes(data);
+      if (data.length === 0) {
+        toast({
+          variant: "destructive",
+          title: "Search",
+          description: "No course notes found for the selected criteria.",
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Search",
+        description: "Error fetching existing notes.",
+      });
+    } finally {
+      setSearching(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("matricNumber");
@@ -103,11 +212,17 @@ const getInitials = () => {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? "dark bg-gray-900" : "bg-gray-50"}`}>
+    <div
+      className={`min-h-screen transition-colors duration-200 ${
+        isDarkMode ? "dark bg-gray-900" : "bg-gray-50"
+      }`}
+    >
       {/* Header */}
       <header
         className={`border-b px-6 py-4 transition-colors duration-200 ${
-          isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
+          isDarkMode
+            ? "bg-gray-800 border-gray-700"
+            : "bg-white border-gray-200"
         }`}
       >
         <div className="flex items-center justify-between">
@@ -144,16 +259,26 @@ const getInitials = () => {
 
           <div className="flex items-center gap-2">
             <Avatar className="w-8 h-8">
-              <AvatarImage src={userData.profilePicture || "/placeholder.svg"} />
-              <AvatarFallback className={isDarkMode ? "bg-gray-700 text-white" : ""}>{getInitials()}</AvatarFallback>
+              <AvatarImage
+                src={userData.profilePicture || "/placeholder.svg"}
+              />
+              <AvatarFallback
+                className={isDarkMode ? "bg-gray-700 text-white" : ""}
+              >
+                {getInitials()}
+              </AvatarFallback>
             </Avatar>
             <span
-              className={`font-medium transition-colors duration-200 ${isDarkMode ? "text-white" : "text-gray-900"}`}
+              className={`font-medium transition-colors duration-200 ${
+                isDarkMode ? "text-white" : "text-gray-900"
+              }`}
             >
               {getDisplayName()}
             </span>
             <ChevronDown
-              className={`w-4 h-4 transition-colors duration-200 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}
+              className={`w-4 h-4 transition-colors duration-200 ${
+                isDarkMode ? "text-gray-400" : "text-gray-500"
+              }`}
             />
           </div>
         </div>
@@ -163,18 +288,25 @@ const getInitials = () => {
         {/* Fixed Sidebar */}
         <aside
           className={`w-64 border-r transition-colors duration-200 ${
-            isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
+            isDarkMode
+              ? "bg-gray-800 border-gray-700"
+              : "bg-white border-gray-200"
           }`}
         >
           <nav className="p-4 space-y-2">
-            <Button variant="default" className="w-full justify-start bg-purple-600 hover:bg-purple-700 text-white">
+            <Button
+              variant="default"
+              className="w-full justify-start bg-purple-600 hover:bg-purple-700 text-white"
+            >
               <div className="w-4 h-4 mr-3 bg-white rounded-sm" />
               Dashboard
             </Button>
             <Button
               variant="ghost"
               className={`w-full justify-start transition-colors duration-200 ${
-                isDarkMode ? "text-gray-300 hover:bg-gray-700 hover:text-white" : "text-gray-600"
+                isDarkMode
+                  ? "text-gray-300 hover:bg-gray-700 hover:text-white"
+                  : "text-gray-600"
               }`}
               asChild
             >
@@ -186,7 +318,9 @@ const getInitials = () => {
             <Button
               variant="ghost"
               className={`w-full justify-start transition-colors duration-200 ${
-                isDarkMode ? "text-gray-300 hover:bg-gray-700 hover:text-white" : "text-gray-600"
+                isDarkMode
+                  ? "text-gray-300 hover:bg-gray-700 hover:text-white"
+                  : "text-gray-600"
               }`}
               asChild
             >
@@ -198,7 +332,9 @@ const getInitials = () => {
             <Button
               variant="ghost"
               className={`w-full justify-start transition-colors duration-200 ${
-                isDarkMode ? "text-gray-300 hover:bg-gray-700 hover:text-white" : "text-gray-600"
+                isDarkMode
+                  ? "text-gray-300 hover:bg-gray-700 hover:text-white"
+                  : "text-gray-600"
               }`}
               asChild
             >
@@ -218,7 +354,9 @@ const getInitials = () => {
               <div className="lg:col-span-2">
                 <Card
                   className={`transition-colors duration-200 ${
-                    isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
+                    isDarkMode
+                      ? "bg-gray-800 border-gray-700"
+                      : "bg-white border-gray-200"
                   }`}
                 >
                   <CardHeader>
@@ -256,15 +394,26 @@ const getInitials = () => {
                             dataKey="name"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fontSize: 12, fill: isDarkMode ? "#9CA3AF" : "#6B7280" }}
+                            tick={{
+                              fontSize: 12,
+                              fill: isDarkMode ? "#9CA3AF" : "#6B7280",
+                            }}
                           />
                           <YAxis
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fontSize: 12, fill: isDarkMode ? "#9CA3AF" : "#6B7280" }}
+                            tick={{
+                              fontSize: 12,
+                              fill: isDarkMode ? "#9CA3AF" : "#6B7280",
+                            }}
                             tickFormatter={(value) => `${value}m`}
                           />
-                          <Bar dataKey="value" fill="#8B5CF6" radius={[4, 4, 0, 0]} barSize={40} />
+                          <Bar
+                            dataKey="value"
+                            fill="#8B5CF6"
+                            radius={[4, 4, 0, 0]}
+                            barSize={40}
+                          />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -272,15 +421,31 @@ const getInitials = () => {
                     {/* Progress bar for daily goal */}
                     <div className="mt-4">
                       <div className="flex justify-between text-sm mb-2">
-                        <span className={isDarkMode ? "text-gray-400" : "text-gray-600"}>Daily Progress</span>
-                        <span className={isDarkMode ? "text-gray-400" : "text-gray-600"}>
+                        <span
+                          className={
+                            isDarkMode ? "text-gray-400" : "text-gray-600"
+                          }
+                        >
+                          Daily Progress
+                        </span>
+                        <span
+                          className={
+                            isDarkMode ? "text-gray-400" : "text-gray-600"
+                          }
+                        >
                           {Math.round(analytics.dailyProgress)}%
                         </span>
                       </div>
-                      <div className={`w-full bg-gray-200 rounded-full h-2 ${isDarkMode ? "bg-gray-700" : ""}`}>
+                      <div
+                        className={`w-full bg-gray-200 rounded-full h-2 ${
+                          isDarkMode ? "bg-gray-700" : ""
+                        }`}
+                      >
                         <div
                           className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${Math.min(analytics.dailyProgress, 100)}%` }}
+                          style={{
+                            width: `${Math.min(analytics.dailyProgress, 100)}%`,
+                          }}
                         ></div>
                       </div>
                     </div>
@@ -296,15 +461,22 @@ const getInitials = () => {
                     <CardContent className="p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <Download className="w-4 h-4 text-purple-600" />
-                        <span className="text-sm text-purple-600">Course Downloaded</span>
+                        <span className="text-sm text-purple-600">
+                          Course Downloaded
+                        </span>
                       </div>
-                      <div className="text-2xl font-bold text-purple-900">{totalDownloads}</div>
+                      <div className="text-2xl font-bold text-purple-900">
+                        {totalDownloads}
+                      </div>
                       <div className="text-xs text-purple-700 mt-1">
                         {
                           analytics.downloadedCourses.filter((d) => {
-                            const downloadDate = new Date(d.downloadDate)
-                            const today = new Date()
-                            return downloadDate.toDateString() === today.toDateString()
+                            const downloadDate = new Date(d.downloadDate);
+                            const today = new Date();
+                            return (
+                              downloadDate.toDateString() ===
+                              today.toDateString()
+                            );
                           }).length
                         }{" "}
                         today
@@ -316,10 +488,16 @@ const getInitials = () => {
                     <CardContent className="p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <Clock className="w-4 h-4 text-purple-600" />
-                        <span className="text-sm text-purple-600">Average Time Spent</span>
+                        <span className="text-sm text-purple-600">
+                          Average Time Spent
+                        </span>
                       </div>
-                      <div className="text-2xl font-bold text-purple-900">{averageTimeSpentFormatted}</div>
-                      <div className="text-xs text-purple-700 mt-1">per day (last 30 days)</div>
+                      <div className="text-2xl font-bold text-purple-900">
+                        {averageTimeSpentFormatted}
+                      </div>
+                      <div className="text-xs text-purple-700 mt-1">
+                        per day (last 30 days)
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -328,11 +506,16 @@ const getInitials = () => {
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <CheckCircle className="w-4 h-4 text-purple-600" />
-                      <span className="text-sm text-purple-600">Practice Questions Completed</span>
+                      <span className="text-sm text-purple-600">
+                        Practice Questions Completed
+                      </span>
                     </div>
-                    <div className="text-2xl font-bold text-purple-900">{completedPracticesCount}</div>
+                    <div className="text-2xl font-bold text-purple-900">
+                      {completedPracticesCount}
+                    </div>
                     <div className="text-xs text-purple-700 mt-1">
-                      {analytics.totalQuestionsAnswered} total questions • {analytics.averageScore}% avg score
+                      {analytics.totalQuestionsAnswered} total questions •{" "}
+                      {analytics.averageScore}% avg score
                     </div>
                   </CardContent>
                 </Card>
@@ -340,7 +523,9 @@ const getInitials = () => {
                 {/* Enhanced Streak Card */}
                 <Card
                   className={`transition-colors duration-200 ${
-                    isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
+                    isDarkMode
+                      ? "bg-gray-800 border-gray-700"
+                      : "bg-white border-gray-200"
                   }`}
                 >
                   <CardContent className="p-4 text-center">
@@ -352,7 +537,9 @@ const getInitials = () => {
                         }`}
                       >
                         {streakData.current > 0
-                          ? `You are on a ${streakData.current} day${streakData.current > 1 ? "s" : ""} streak!`
+                          ? `You are on a ${streakData.current} day${
+                              streakData.current > 1 ? "s" : ""
+                            } streak!`
                           : "Start your streak today!"}
                       </div>
                       <div
@@ -360,7 +547,8 @@ const getInitials = () => {
                           isDarkMode ? "text-gray-400" : "text-gray-500"
                         }`}
                       >
-                        {streakData.longest > 0 && `Longest: ${streakData.longest} days`}
+                        {streakData.longest > 0 &&
+                          `Longest: ${streakData.longest} days`}
                       </div>
                       <div
                         className={`text-xs mt-1 transition-colors duration-200 ${
@@ -378,8 +566,8 @@ const getInitials = () => {
                             isActive
                               ? "bg-orange-400 text-orange-900"
                               : isDarkMode
-                                ? "bg-gray-600 text-gray-400"
-                                : "bg-gray-200 text-gray-400"
+                              ? "bg-gray-600 text-gray-400"
+                              : "bg-gray-200 text-gray-400"
                           }`}
                           title={`${7 - i} days ago`}
                         >
@@ -395,7 +583,9 @@ const getInitials = () => {
             {/* Search Section */}
             <Card
               className={`mt-6 transition-colors duration-200 ${
-                isDarkMode ? "bg-gray-800 border-gray-700" : "bg-gray-100 border-gray-200"
+                isDarkMode
+                  ? "bg-gray-800 border-gray-700"
+                  : "bg-gray-100 border-gray-200"
               }`}
             >
               <CardContent className="p-6">
@@ -405,9 +595,17 @@ const getInitials = () => {
                       isDarkMode ? "text-gray-300" : "text-gray-700"
                     }`}
                   >
-                    Welcome <span className="text-purple-600">{userData.firstName}</span>,
+                    Welcome{" "}
+                    <span className="text-purple-600">
+                      {user?.given_name || "Student"}
+                    </span>
+                    ,
                   </h2>
-                  <p className={`transition-colors duration-200 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+                  <p
+                    className={`transition-colors duration-200 ${
+                      isDarkMode ? "text-gray-400" : "text-gray-600"
+                    }`}
+                  >
                     Ace your next exam—start with StudyStack!
                   </p>
                 </div>
@@ -418,111 +616,240 @@ const getInitials = () => {
                       isDarkMode ? "text-white" : "text-gray-900"
                     }`}
                   >
-                    Search <span className="text-purple-600">Past Question</span>
+                    Search{" "}
+                    <span className="text-purple-600">Past Question</span>
                   </h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <Select>
+                    <Select
+                      onValueChange={(value) =>
+                        setSearchData((prev) => ({
+                          ...prev,
+                          department: value,
+                        }))
+                      }
+                    >
                       <SelectTrigger
                         className={`transition-colors duration-200 ${
-                          isDarkMode ? "bg-gray-700 border-gray-600 text-white" : "bg-white"
+                          isDarkMode
+                            ? "bg-gray-700 border-gray-600 text-white"
+                            : "bg-white"
                         }`}
                       >
                         <SelectValue placeholder="Department" />
                       </SelectTrigger>
-                      <SelectContent className={isDarkMode ? "bg-gray-700 border-gray-600" : ""}>
-                        <SelectItem
-                          value="computer-science"
-                          className={isDarkMode ? "text-white hover:bg-gray-600" : ""}
-                        >
-                          Computer Science
-                        </SelectItem>
-                        <SelectItem value="engineering" className={isDarkMode ? "text-white hover:bg-gray-600" : ""}>
-                          Engineering
-                        </SelectItem>
-                        <SelectItem value="medicine" className={isDarkMode ? "text-white hover:bg-gray-600" : ""}>
-                          Medicine
-                        </SelectItem>
+                      <SelectContent
+                        className={
+                          isDarkMode ? "bg-gray-700 border-gray-600" : ""
+                        }
+                      >
+                        {departments.map((department) => (
+                          <SelectItem
+                            key={department}
+                            value={department}
+                            className={
+                              isDarkMode ? "text-white hover:bg-gray-600" : ""
+                            }
+                          >
+                            {department}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
 
-                    <Select>
+                    <Select
+                      onValueChange={(value) =>
+                        setSearchData((prev) => ({ ...prev, level: value }))
+                      }
+                    >
                       <SelectTrigger
                         className={`transition-colors duration-200 ${
-                          isDarkMode ? "bg-gray-700 border-gray-600 text-white" : "bg-white"
+                          isDarkMode
+                            ? "bg-gray-700 border-gray-600 text-white"
+                            : "bg-white"
                         }`}
                       >
                         <SelectValue placeholder="Level" />
                       </SelectTrigger>
-                      <SelectContent className={isDarkMode ? "bg-gray-700 border-gray-600" : ""}>
-                        <SelectItem value="100" className={isDarkMode ? "text-white hover:bg-gray-600" : ""}>
-                          100 Level
-                        </SelectItem>
-                        <SelectItem value="200" className={isDarkMode ? "text-white hover:bg-gray-600" : ""}>
-                          200 Level
-                        </SelectItem>
-                        <SelectItem value="300" className={isDarkMode ? "text-white hover:bg-gray-600" : ""}>
-                          300 Level
-                        </SelectItem>
-                        <SelectItem value="400" className={isDarkMode ? "text-white hover:bg-gray-600" : ""}>
-                          400 Level
-                        </SelectItem>
+                      <SelectContent
+                        className={
+                          isDarkMode ? "bg-gray-700 border-gray-600" : ""
+                        }
+                      >
+                        {levels.map((level) => (
+                          <SelectItem
+                            key={level}
+                            value={level}
+                            className={
+                              isDarkMode ? "text-white hover:bg-gray-600" : ""
+                            }
+                          >
+                            {level}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
 
-                    <Select>
+                    <Select
+                      onValueChange={(value) =>
+                        setSearchData((prev) => ({ ...prev, semester: value }))
+                      }
+                    >
                       <SelectTrigger
                         className={`transition-colors duration-200 ${
-                          isDarkMode ? "bg-gray-700 border-gray-600 text-white" : "bg-white"
+                          isDarkMode
+                            ? "bg-gray-700 border-gray-600 text-white"
+                            : "bg-white"
                         }`}
                       >
                         <SelectValue placeholder="Semester" />
                       </SelectTrigger>
-                      <SelectContent className={isDarkMode ? "bg-gray-700 border-gray-600" : ""}>
-                        <SelectItem value="first" className={isDarkMode ? "text-white hover:bg-gray-600" : ""}>
-                          First Semester
-                        </SelectItem>
-                        <SelectItem value="second" className={isDarkMode ? "text-white hover:bg-gray-600" : ""}>
-                          Second Semester
-                        </SelectItem>
+                      <SelectContent
+                        className={
+                          isDarkMode ? "bg-gray-700 border-gray-600" : ""
+                        }
+                      >
+                        {semester.map((sem) => (
+                          <SelectItem
+                            key={sem.value}
+                            value={sem.value}
+                            className={
+                              isDarkMode ? "text-white hover:bg-gray-600" : ""
+                            }
+                          >
+                            {sem.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
 
-                    <Select>
+                    <Select
+                      onValueChange={(value) =>
+                        setSearchData((prev) => ({ ...prev, year: value }))
+                      }
+                    >
                       <SelectTrigger
                         className={`transition-colors duration-200 ${
-                          isDarkMode ? "bg-gray-700 border-gray-600 text-white" : "bg-white"
+                          isDarkMode
+                            ? "bg-gray-700 border-gray-600 text-white"
+                            : "bg-white"
                         }`}
                       >
-                        <SelectValue placeholder="Course" />
+                        <SelectValue placeholder="Year" />
                       </SelectTrigger>
-                      <SelectContent className={isDarkMode ? "bg-gray-700 border-gray-600" : ""}>
-                        <SelectItem value="mathematics" className={isDarkMode ? "text-white hover:bg-gray-600" : ""}>
-                          Mathematics
-                        </SelectItem>
-                        <SelectItem value="physics" className={isDarkMode ? "text-white hover:bg-gray-600" : ""}>
-                          Physics
-                        </SelectItem>
-                        <SelectItem value="chemistry" className={isDarkMode ? "text-white hover:bg-gray-600" : ""}>
-                          Chemistry
-                        </SelectItem>
+                      <SelectContent
+                        className={
+                          isDarkMode ? "bg-gray-700 border-gray-600" : ""
+                        }
+                      >
+                        {years.map((year) => (
+                          <SelectItem
+                            key={year}
+                            value={year}
+                            className={
+                              isDarkMode ? "text-white hover:bg-gray-600" : ""
+                            }
+                          >
+                            {year}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="flex justify-center">
                     <Button
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-12 py-2"
+                      className="bg-purple-600 hover:bg-purple-700 text-white"
                       onClick={handleSearch}
-                      asChild
+                      disabled={isSearching}
                     >
-                      <Link href="/search-results">SEARCH</Link>
+                      {isSearching ? "Searching..." : "SEARCH"}
                     </Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
+            {/* Searched Notes Section */}
+            {searchedNotes.length > 0 && (
+              <div className="p-6">
+                {/* Search Results Header */}
+                <div className="mb-6">
+                  <p
+                    className={`mb-4 transition-colors duration-200 ${
+                      isDarkMode ? "text-gray-400" : "text-gray-600"
+                    }`}
+                  >
+                    <span className="font-semibold text-purple-600">
+                      {searchedNotes.length}
+                    </span>{" "}
+                    <span className="text-purple-600">Past Question</span> found
+                    {/* for:{" "} */}
+                    {/* <span className="font-semibold">{searchData.level ? searchData.level +" •" : ""}  Computer Science • 1st Semester</span> */}
+                  </p>
+                </div>
+
+                {/* Question Papers Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {searchedNotes.map((paper) => (
+                    <Card
+                      key={paper._id}
+                      className={`hover:shadow-md transition-all duration-200 ${
+                        isDarkMode
+                          ? "bg-gray-800 border-gray-700 hover:bg-gray-750"
+                          : "bg-white border-gray-200"
+                      }`}
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Book className="w-6 h-6 text-purple-600" />
+                          </div>
+                          <div className="flex-1">
+                            <h3
+                              className={`font-semibold mb-1 transition-colors duration-200 ${
+                                isDarkMode ? "text-white" : "text-gray-900"
+                              }`}
+                            >
+                              {paper.courseTitle}
+                            </h3>
+                            <p
+                              className={`text-sm mb-1 transition-colors duration-200 ${
+                                isDarkMode ? "text-gray-400" : "text-gray-600"
+                              }`}
+                            >
+                              {paper.department}
+                            </p>
+                            <p
+                              className={`text-sm mb-4 transition-colors duration-200 ${
+                                isDarkMode ? "text-gray-500" : "text-gray-500"
+                              }`}
+                            >
+                              {paper.level} • {paper.semester + 'Semester'} • {paper.year}
+                            </p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                window.open(paper.fileUrl, "_blank")
+                              }
+                              className={`text-purple-600 border-purple-200 hover:bg-purple-50 bg-transparent transition-colors duration-200 ${
+                                isDarkMode
+                                  ? "hover:bg-purple-900/20 border-purple-400"
+                                  : ""
+                              }`}
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              Download PDF
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
             {/* Logout Button */}
             <div className="mt-8 flex justify-end">
               <LogoutLink postLogoutRedirectURL="http://localhost:3000">
@@ -538,5 +865,5 @@ const getInitials = () => {
         </main>
       </div>
     </div>
-  )
+  );
 }

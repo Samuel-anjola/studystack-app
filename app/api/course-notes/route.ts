@@ -2,6 +2,7 @@ import cloudinary from "@/lib/cloudinary";
 import { NextRequest } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
+import { ObjectId } from "mongodb";
 
 export async function POST(req: NextRequest) {
   const { getUser } = getKindeServerSession();
@@ -46,5 +47,55 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Upload failed:", error);
     return new Response("Upload failed", { status: 500 });
+  }
+}
+
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const courseTitle = searchParams.get("courseTitle");
+  const level = searchParams.get("level");
+  const year = searchParams.get("year");
+  const semester = searchParams.get("semester");
+  const department = searchParams.get("department");
+
+  const db = (await clientPromise).db();
+  const query: any = {};
+
+  if (courseTitle) query.courseTitle = courseTitle;
+  if (level) query.level = level;
+  if (year) query.year = year;
+  if (semester) query.semester = semester;
+  if (department) query.department = department;
+
+  const notes = await db.collection("course_notes").find(query).toArray();
+
+  return new Response(JSON.stringify(notes), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+export async function DELETE(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const noteId = searchParams.get("noteId");
+
+  if (!noteId) {
+    return new Response("Note ID is required", { status: 400 });
+  }
+
+  try {
+    const db = (await clientPromise).db();
+    const result = await db
+      .collection("course_notes")
+      .deleteOne({ _id: new ObjectId(noteId) });
+
+    if (result.deletedCount === 0) {
+      return new Response("Note not found", { status: 404 });
+    }
+
+    return new Response("Note deleted successfully", { status: 200 });
+  } catch (error) {
+    console.error("Delete failed:", error);
+    return new Response("Delete failed", { status: 500 });
   }
 }
