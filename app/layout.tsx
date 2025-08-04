@@ -16,7 +16,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "StudyStack",
   description: "Your study companion",
-    generator: 'v0.dev'
+    generator: ''
 }
 
 export default function RootLayout({

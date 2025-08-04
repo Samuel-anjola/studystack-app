@@ -26,7 +26,17 @@ export async function POST(req: Request) {
       await collection.insertOne({...user, createdAt: new Date(), role: request.role || "user", matric_number: request.matric_number || ""});
     }
 
-    return NextResponse.json({ message: "User saved" }, { status: 200 });
+    const response = NextResponse.json({ message: "User role saved" }, { status: 200 });
+
+    // add user role to cookie, to be used later in middleware
+    if(request.role) {
+      response.cookies.set("userRole", request.role, {
+        httpOnly: true,
+        sameSite: "strict",
+      });
+    }
+      
+    return response;
   } catch (error) {
     console.error("❌ MongoDB insert error:", error);
 

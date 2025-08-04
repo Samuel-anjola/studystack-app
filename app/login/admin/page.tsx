@@ -134,7 +134,7 @@ export default function AdminLoginPage() {
                 <p className="text-green-800 text-sm">✅ Admin code verified! Continue with Kinde authentication:</p>
               </div>
 
-              <LoginLink>
+              <LoginLink postLoginRedirectURL="/admin/course-note">
                 <Button className="w-full bg-purple-600 hover:bg-purple-700">Continue with Kinde Authentication</Button>
               </LoginLink>
             </div>
