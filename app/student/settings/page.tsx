@@ -341,7 +341,7 @@ const getInitials = () => {
     </Label>
     <Input
       id="firstName"
-      value={userData.firstName}
+      value={user?.given_name || ""}
       disabled
       className={`cursor-not-allowed transition-colors duration-200 ${
         isDarkMode ? "bg-gray-700 border-gray-600 text-gray-400" : "bg-gray-50"
@@ -357,7 +357,7 @@ const getInitials = () => {
     </Label>
     <Input
       id="lastName"
-      value={userData.lastName}
+      value={user?.family_name || ""}
       disabled
       className={`cursor-not-allowed transition-colors duration-200 ${
         isDarkMode ? "bg-gray-700 border-gray-600 text-gray-400" : "bg-gray-50"
@@ -377,7 +377,7 @@ const getInitials = () => {
   <Input
     id="email"
     type="email"
-    value={userData.email}
+    value={user?.email || ""}
     disabled
     className={`cursor-not-allowed transition-colors duration-200 ${
       isDarkMode ? "bg-gray-700 border-gray-600 text-gray-400" : "bg-gray-50"
