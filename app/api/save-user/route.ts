@@ -4,8 +4,11 @@ import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 
 export async function POST(req: Request) {
   try {
+    // request body will contain the user matric number and role
     const request = await req.json();
     console.log("Received request to save user:", request);
+
+    //the other user information (name, id, email) is gotten from kinde
     const { getUser } = getKindeServerSession();
     const user = await getUser();
 
@@ -17,6 +20,7 @@ export async function POST(req: Request) {
     const db = client.db("studystack");
     const collection = db.collection("users");
 
+    // check if user already exists in the database
     const existingUser = await collection.findOne({ id: user.id });
     if (!existingUser) {
       await collection.insertOne({...user, createdAt: new Date(), role: request.role || "user", matric_number: request.matric_number || ""});
