@@ -114,7 +114,7 @@ export default function AdminCourseNotePage() {
       }
     }
 
-    saveUserToDB(); // ✅ You forgot to call the async function
+    saveUserToDB(); 
   }, [user]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
